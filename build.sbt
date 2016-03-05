@@ -17,3 +17,9 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.3"
 libraryDependencies += "com.typesafe.akka" % "akka-actor_2.11" % "2.3.13"
 
 libraryDependencies += "org.springframework.boot" % "spring-boot" % "1.3.3.RELEASE"
+
+libraryDependencies += "org.springframework.boot" % "spring-boot-autoconfigure" % "1.3.3.RELEASE"
+
+libraryDependencies += "org.springframework.boot" % "spring-boot-starter" % "1.3.3.RELEASE"
+
+libraryDependencies += "io.reactivex" % "rxscala_2.11" % "0.26.0"
