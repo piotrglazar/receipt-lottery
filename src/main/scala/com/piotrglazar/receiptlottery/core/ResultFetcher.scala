@@ -1,16 +1,15 @@
-package com.piotrglazar.receiptlottery
+package com.piotrglazar.receiptlottery.core
 
+import com.piotrglazar.receiptlottery.Token
 import com.piotrglazar.receiptlottery.utils.HttpAdapter
 import org.htmlcleaner.{HtmlCleaner, TagNode}
-import org.springframework.beans.factory.annotation.{Value, Autowired}
+import org.springframework.beans.factory.annotation.{Autowired, Value}
 import org.springframework.stereotype.Component
 
 @Component
 class ResultFetcher @Autowired()(@Value("${results.page}") private val pageAddress: String, private val httpAdapter: HttpAdapter) {
 
   def hasResult(token: Token): Boolean = {
-    println(s"Working on ${Thread.currentThread().getName}")
-
     val rawContent = httpAdapter.request(pageAddress, Map("code" -> token.value))
     val cleanContent: TagNode = new HtmlCleaner().clean(rawContent)
 

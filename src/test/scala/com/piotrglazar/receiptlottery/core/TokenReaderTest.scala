@@ -1,4 +1,4 @@
-package com.piotrglazar.receiptlottery.reader
+package com.piotrglazar.receiptlottery.core
 
 import com.piotrglazar.receiptlottery.Token
 import org.scalatest.{Matchers, FlatSpec}

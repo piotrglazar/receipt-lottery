@@ -1,8 +1,9 @@
-package com.piotrglazar.receiptlottery
+package com.piotrglazar.receiptlottery.core
 
+import com.piotrglazar.receiptlottery.Token
 import com.piotrglazar.receiptlottery.utils.ScalajHttpAdapter
-import org.scalatest.{Matchers, FlatSpec}
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.{FlatSpec, Matchers}
 
 class ResultFetcherTest extends FlatSpec with Matchers {
 

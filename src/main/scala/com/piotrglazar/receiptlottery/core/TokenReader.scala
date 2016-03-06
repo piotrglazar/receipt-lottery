@@ -1,4 +1,4 @@
-package com.piotrglazar.receiptlottery.reader
+package com.piotrglazar.receiptlottery.core
 
 import com.piotrglazar.receiptlottery.Token
 import org.springframework.beans.factory.annotation.{Value, Autowired}
