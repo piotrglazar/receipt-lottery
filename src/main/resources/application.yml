@@ -1,2 +1,3 @@
-token:
-  file: /tokens.txt
+token.file: /tokens.txt
+
+results.page: https://loteriaparagonowa.gov.pl/wyniki
