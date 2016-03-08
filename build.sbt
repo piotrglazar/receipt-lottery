@@ -23,3 +23,7 @@ libraryDependencies += "org.springframework.boot" % "spring-boot-autoconfigure" 
 libraryDependencies += "org.springframework.boot" % "spring-boot-starter" % "1.3.3.RELEASE"
 
 libraryDependencies += "io.reactivex" % "rxscala_2.11" % "0.26.0"
+
+libraryDependencies += "com.github.scalaspring" %% "scalatest-spring" % "0.2.1" % Test
+
+libraryDependencies += "org.springframework.boot" % "spring-boot-starter-test" % "1.3.3.RELEASE" % Test
