@@ -2,12 +2,18 @@ package com.piotrglazar.receiptlottery.core
 
 import com.piotrglazar.receiptlottery.Token
 import com.piotrglazar.receiptlottery.utils.ScalajHttpAdapter
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{FlatSpec, Matchers}
 
-class ResultFetcherTest extends FlatSpec with Matchers {
+import scala.concurrent.ExecutionContext.Implicits.global
 
-  val resultFetcher = new ResultFetcher("https://loteriaparagonowa.gov.pl/wyniki", new ScalajHttpAdapter(2000))
+class ResultFetcherTest extends FlatSpec with Matchers with ScalaFutures {
+
+  implicit val timeout = PatienceConfig(Span(1, Seconds))
+
+  val resultFetcher = new ResultFetcher("https://loteriaparagonowa.gov.pl/wyniki", new ScalajHttpAdapter(2000), global)
 
   val tokens = Table(("token", "result"),
     (Token("D2T1UGL9M34"), true),
@@ -19,7 +25,7 @@ class ResultFetcherTest extends FlatSpec with Matchers {
       val result = resultFetcher.hasResult(token)
 
       // then
-      result shouldBe expectedResult
+      result.futureValue shouldBe expectedResult
     }
   }
 

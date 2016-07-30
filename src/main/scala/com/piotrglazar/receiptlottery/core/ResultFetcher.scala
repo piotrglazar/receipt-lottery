@@ -6,17 +6,22 @@ import org.htmlcleaner.{HtmlCleaner, TagNode}
 import org.springframework.beans.factory.annotation.{Autowired, Value}
 import org.springframework.stereotype.Component
 
+import scala.concurrent.{ExecutionContext, Future}
+
 @Component
-class ResultFetcher @Autowired()(@Value("${results.page}") private val pageAddress: String, private val httpAdapter: HttpAdapter) {
+class ResultFetcher @Autowired()(@Value("${results.page}") private val pageAddress: String, private val httpAdapter: HttpAdapter,
+                                 implicit private val executionContext: ExecutionContext) {
 
-  def hasResult(token: Token): Boolean = {
-    val rawContent = httpAdapter.request(pageAddress, Map("code" -> token.value))
-    val cleanContent: TagNode = new HtmlCleaner().clean(rawContent)
+  def hasResult(token: Token): Future[Boolean] = {
+    val rawContentFuture = httpAdapter.asyncRequest(pageAddress, Map("code" -> token.value))
+    rawContentFuture.map { rawContent =>
+      val cleanContent: TagNode = new HtmlCleaner().clean(rawContent)
 
-    !getResultTables(cleanContent)
-      .flatMap(getResultTableBody)
-      .flatMap(getResultTableRows)
-      .isEmpty
+      !getResultTables(cleanContent)
+        .flatMap(getResultTableBody)
+        .flatMap(getResultTableRows)
+        .isEmpty
+    }
   }
 
   private def getResultTables(page: TagNode): Array[TagNode] =

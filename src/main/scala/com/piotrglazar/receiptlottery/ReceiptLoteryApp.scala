@@ -1,22 +1,28 @@
 package com.piotrglazar.receiptlottery
 
-import java.util.concurrent.{TimeUnit, CountDownLatch}
+import java.util
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, TimeUnit}
 
 import com.piotrglazar.receiptlottery.ReceiptLoteryApp.{AppState, logger}
 import com.piotrglazar.receiptlottery.core.{ResultFetcher, TokenReader}
-import org.slf4j.{LoggerFactory, Logger}
+import org.slf4j.{Logger, LoggerFactory}
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import rx.lang.scala.{Subscriber, Observable}
+import rx.lang.scala.Observable
 import rx.lang.scala.schedulers.IOScheduler
+
+import scala.concurrent.ExecutionContext
 
 object ReceiptLoteryApp {
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 
   class AppState {
-    private val latch = new CountDownLatch(1)
+    private val latch: CountDownLatch = new CountDownLatch(1)
 
-    var winning: List[VerifiedToken] = List.empty
+    val numberOfVerifiedTokens: AtomicInteger = new AtomicInteger()
+
+    val winning: ConcurrentLinkedQueue[VerifiedToken] = new ConcurrentLinkedQueue()
 
     def workCompleted(): Unit = latch.countDown()
 
@@ -26,17 +32,20 @@ object ReceiptLoteryApp {
     }
 
     def awaitForWorkToBeFinished(): Unit =
-      if (!latch.await(10, TimeUnit.SECONDS))
+      if (!latch.await(1, TimeUnit.MINUTES))
         logger.error("Timeout elapsed")
 
-    def registerWinning(verifiedToken: VerifiedToken): Unit =
-      winning = verifiedToken :: winning
-
+    def registerToken(verifiedToken: VerifiedToken): Unit = {
+      numberOfVerifiedTokens.incrementAndGet()
+      if (verifiedToken.isWinning)
+        winning.add(verifiedToken)
+    }
   }
 }
 
 @Component
-class ReceiptLoteryApp @Autowired()(private val tokenReader: TokenReader, private val resultFetcher: ResultFetcher) {
+class ReceiptLoteryApp @Autowired()(private val tokenReader: TokenReader, private val resultFetcher: ResultFetcher,
+                                    implicit private val executionContext: ExecutionContext) {
 
   def verifyTokens(): Unit = {
     logger.info("Verifying tokens")
@@ -44,21 +53,23 @@ class ReceiptLoteryApp @Autowired()(private val tokenReader: TokenReader, privat
 
     tokenReader.readTokens()
       .flatMap(singlePageObs)
-      .filter(_.isWinning)
-      .subscribe(state.registerWinning, state.reportError, state.workCompleted)
+      .subscribe(state.registerToken, state.reportError, state.workCompleted)
 
     state.awaitForWorkToBeFinished()
 
     if (state.winning.isEmpty)
-      logger.info("Sorry, no winning tokens")
+      logger.info(s"Sorry, no winning tokens, verified ${state.numberOfVerifiedTokens.get()}")
     else
-      state.winning.foreach(vt => logger.info("Winning token {}", vt.token.value))
+      logWinningTokens(state.winning)
   }
 
-  private def singlePageObs(token: Token): Observable[VerifiedToken] =
-    Observable { s: Subscriber[VerifiedToken] =>
-      s.onNext(VerifiedToken(token, resultFetcher.hasResult(token)))
-      s.onCompleted()
-    }.subscribeOn(IOScheduler())
+  private def logWinningTokens(queue: util.Queue[VerifiedToken]): Unit =
+    while (!queue.isEmpty) {
+      logger.info("Winning token {}", queue.poll())
+    }
 
+  private def singlePageObs(token: Token): Observable[VerifiedToken] =
+    Observable.from(resultFetcher.hasResult(token))
+      .map(result => VerifiedToken(token, result))
+      .subscribeOn(IOScheduler())
 }

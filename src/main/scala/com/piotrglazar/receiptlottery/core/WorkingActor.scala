@@ -10,9 +10,12 @@ import org.springframework.stereotype.Component
 @Scope("prototype")
 class WorkingActor @Autowired()(private val resultFetcher: ResultFetcher) extends Actor {
 
+  implicit private val executionContext = context.system.dispatcher
+
   override def receive: Receive = {
     case token: Token =>
-      val result = resultFetcher.hasResult(token)
-      sender() ! VerifiedToken(token, result)
+      val requester = sender()
+      val resultFuture = resultFetcher.hasResult(token)
+      resultFuture.onSuccess { case result => requester ! VerifiedToken(token, result) }
   }
 }
